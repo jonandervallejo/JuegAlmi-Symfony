@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\UbicacionRepository;
 use App\Repository\UsuarioRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +25,11 @@ class ClienteController extends AbstractController
         return $this->convertToJson($usuarioRepository->findAll());
     }
 
+    #[Route('/ubicaciones', name: 'app_get_ubicaciones', methods: ['GET'])]
+    public function getUbicaciones(UbicacionRepository $ubicacionRepository): JsonResponse
+    {
+        return $this->convertToJson($ubicacionRepository->findAll());
+    }
 
     #[Route('/loginCliente', name: 'app_loginCliente', methods: ['PUT'])]
     public function login(Request $request, UsuarioRepository $usuarioRepository): JsonResponse
@@ -57,22 +63,22 @@ class ClienteController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         // Validar que se proporcionen los parámetros necesarios
-        if (empty($data['latitud']) || empty($data['longitud'])) {
+        if (empty($data['idUsuario']) || empty($data['latitud']) || empty($data['longitud'])) {
             return new JsonResponse(['status' => 'Faltan parámetros'], Response::HTTP_BAD_REQUEST);
         }
 
         // Obtener el usuario actualmente autenticado
-        $usuario = $this->getUser(); // Asegúrate de que el usuario esté autenticado
+        $usuario = $usuarioRepository->find($data['idUsuario']);
 
         if (!$usuario) {
-            return new JsonResponse(['status' => 'Usuario no autenticado'], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['status' => 'Usuario no encontrado'], Response::HTTP_UNAUTHORIZED);
         }
 
-        // Usar el mé
         $usuarioRepository->guardarUbicacion($usuario, $data['latitud'], $data['longitud']);
 
         return new JsonResponse(['status' => 'Ubicación guardada correctamente'], Response::HTTP_CREATED);
     }
+
 
 
     private function convertToJson($data): JsonResponse

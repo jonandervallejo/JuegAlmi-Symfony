@@ -16,6 +16,18 @@ class ProductoRepository extends ServiceEntityRepository
         parent::__construct($registry, Producto::class);
     }
 
+    public function anadirProducto(Producto $producto) {
+
+        $this->getEntityManager()->persist($producto);
+        $this->getEntityManager()->flush();
+    }
+
+    public function deleteProducto(Producto $producto): void
+    {
+        $this->getEntityManager()->remove($producto);
+        $this->getEntityManager()->flush();
+    }
+
     //    /**
     //     * @return Producto[] Returns an array of Producto objects
     //     */

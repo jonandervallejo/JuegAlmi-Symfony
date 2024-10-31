@@ -36,6 +36,9 @@ class Producto
     #[ORM\OneToMany(targetEntity: ProductoSolicitado::class, mappedBy: 'id_producto')]
     private Collection $productoSolicitados;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $tipo_producto = null;
+
     public function __construct()
     {
         $this->productoSolicitados = new ArrayCollection();
@@ -132,6 +135,18 @@ class Producto
                 $productoSolicitado->setIdProducto(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getTipoProducto(): ?string
+    {
+        return $this->tipo_producto;
+    }
+
+    public function setTipoProducto(?string $tipo_producto): static
+    {
+        $this->tipo_producto = $tipo_producto;
 
         return $this;
     }
