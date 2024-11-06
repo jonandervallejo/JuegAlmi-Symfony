@@ -2,8 +2,13 @@
 
 namespace App\Controller;
 
+use App\Entity\Compra;
+use App\Entity\Producto;
+use App\Entity\ProductoSolicitado;
+use App\Entity\Usuario;
 use App\Repository\UbicacionRepository;
 use App\Repository\UsuarioRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,7 +37,7 @@ class ClienteController extends AbstractController
     }
 
     #[Route('/loginCliente', name: 'app_loginCliente', methods: ['PUT'])]
-    public function login(Request $request, UsuarioRepository $usuarioRepository): JsonResponse
+    public function loginCliente(Request $request, UsuarioRepository $usuarioRepository): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
@@ -79,6 +84,58 @@ class ClienteController extends AbstractController
         return new JsonResponse(['status' => 'Ubicación guardada correctamente'], Response::HTTP_CREATED);
     }
 
+
+    #[Route('/finalizar-compra', name: 'finalizar_compra', methods: ['POST'])]
+    public function finalizarCompra(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $userId = $data['userId'] ?? null;
+
+        // Buscar al usuario por ID
+        $usuario = $entityManager->getRepository(Usuario::class)->find($userId);
+
+        // Verificar si el usuario existe
+        if (!$usuario) {
+            return new JsonResponse(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Crear una nueva instancia de Compra
+        $compra = new Compra();
+        $compra->setPrecioSolicitud($data['precioTotal']); // Precio total de la compra
+
+        // Iterar por los productos en el carrito y procesarlos
+        foreach ($data['productos'] as $productoData) {
+            // Buscar el objeto Producto a partir de su ID
+            $producto = $entityManager->getRepository(Producto::class)->find($productoData['id']);
+
+            // Verificar si el producto existe en la base de datos
+            if (!$producto) {
+                return new JsonResponse(['error' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
+            }
+
+            // Crear una instancia de ProductoSolicitado y asignar el producto
+            $productoSolicitado = new ProductoSolicitado();
+            $productoSolicitado->setIdProducto($producto); // Asignar el objeto Producto
+
+            // Asignar ProductoSolicitado a la compra
+            $compra->addProductoSolicitado($productoSolicitado);
+            $entityManager->persist($productoSolicitado);
+        }
+
+        // Asignar la solicitud al usuario actual
+        $usuario = $entityManager->getRepository(Usuario::class)->find($userId);
+        if ($usuario) {
+            $compra->addUsuario($usuario);
+        } else {
+            return new JsonResponse(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Persistir la compra en la base de datos
+        $entityManager->persist($compra);
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Compra finalizada con éxito'], Response::HTTP_OK);
+    }
 
 
     private function convertToJson($data): JsonResponse

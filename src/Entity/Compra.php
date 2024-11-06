@@ -11,15 +11,15 @@ class Compra extends Solicitud
    /* #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;*/
+    private ?int $id = null; */
 
     #[ORM\Column(length: 255)]
     private ?string $adquisiciones = null;
 
-    public function getId(): ?int
+    /* public function getId(): ?int
     {
         return $this->id;
-    }
+    } */
 
     public function getAdquisiciones(): ?string
     {

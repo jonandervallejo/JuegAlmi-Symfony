@@ -35,12 +35,13 @@ class ProductoController extends AbstractController
         return $this->convertToJson($productos);
     }
 
-    #[Route('/productos', name: 'app_add_producto', methods: ['POST'])]
+
+
+    #[Route('/anadirProducto', name: 'app_add_producto', methods: ['POST'])]
     public function addProducto(Request $request, ProductoRepository $productoRepository): JsonResponse
     {
         // Decodificamos el contenido de la solicitud JSON
         $data = json_decode($request->getContent(), true);
-
 
         if (empty($data)) {
             throw new NotFoundHttpException('Faltan parametros');
@@ -83,18 +84,51 @@ class ProductoController extends AbstractController
             return new JsonResponse(['status' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
         }
 
-        $entityManager = $productoRepository->getEntityManager();
-
-        $productoRepository->deleteProducto($producto);
-
-        // Flushear los cambios en la base de datos
+        $entityManager = $this->getDoctrine()->getManager();
+        $entityManager->remove($producto);
         $entityManager->flush();
 
-        // Responder con éxito
         return new JsonResponse(['status' => 'Producto eliminado'], Response::HTTP_OK);
     }
 
 
+    #[Route('/producto/editar/{id}', name: 'app_producto_editar', methods: ['PUT'])]
+    public function editProducto(int $id, Request $request, ProductoRepository $productoRepository): JsonResponse
+    {
+        $producto = $productoRepository->find($id);
+
+        if (!$producto) {
+            return new JsonResponse(['status' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+
+        $data = json_decode($request->getContent(), true);
+
+        if (empty($data)) {
+            throw new NotFoundHttpException('Faltan parametros');
+        }
+
+        $producto->setNombre($data['nombre']);
+        $producto->setDescripcion($data['descripcion']);
+        $producto->setStock($data['stock']);
+        $producto->setImagen($data['imagen']);
+        $producto->setPrecio($data['precio']);
+        $producto->setTipoProducto($data['tipo_producto']);
+
+        $productoRepository->anadirProducto($producto, true);
+
+        return new JsonResponse([
+            'status' => 'Producto actualizado exitosamente',
+            'producto' => [
+                'id' => $producto->getId(),
+                'nombre' => $producto->getNombre(),
+                'descripcion' => $producto->getDescripcion(),
+                'stock' => $producto->getStock(),
+                'imagen' => $producto->getImagen(),
+                'precio' => $producto->getPrecio(),
+                'tipo_producto' => $producto->getTipoProducto(),
+            ]
+        ], Response::HTTP_OK);
+    }
 
 
     private function convertToJson($data): JsonResponse

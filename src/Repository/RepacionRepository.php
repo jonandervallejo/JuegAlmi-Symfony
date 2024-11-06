@@ -16,6 +16,12 @@ class RepacionRepository extends ServiceEntityRepository
         parent::__construct($registry, Repacion::class);
     }
 
+    public function anadirRepacion(Repacion $repacion): void
+    {
+        $this->getEntityManager()->persist($repacion);
+        $this->getEntityManager()->flush();
+    }
+
     //    /**
     //     * @return Repacion[] Returns an array of Repacion objects
     //     */
