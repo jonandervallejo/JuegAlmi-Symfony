@@ -5,11 +5,14 @@ namespace App\Controller;
 use App\Entity\Compra;
 use App\Entity\Producto;
 use App\Entity\ProductoSolicitado;
+use App\Entity\Solicitud;
 use App\Entity\Usuario;
 use App\Repository\UbicacionRepository;
 use App\Repository\UsuarioRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -37,7 +40,7 @@ class ClienteController extends AbstractController
     }
 
     #[Route('/loginCliente', name: 'app_loginCliente', methods: ['PUT'])]
-    public function loginCliente(Request $request, UsuarioRepository $usuarioRepository): JsonResponse
+    public function loginCliente(Request $request, UsuarioRepository $usuarioRepository, JWTTokenManagerInterface $jwtManager): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
@@ -48,6 +51,9 @@ class ClienteController extends AbstractController
         // Buscar el usuario por nombre de usuario
         $usuario = $usuarioRepository->findOneBy(['email' => $data['email']]);
 
+        // Generar el token JWT
+        $token = $jwtManager->create($usuario);
+
         if (!$usuario || $usuario->getPassword() !== $data['password']) {
             return new JsonResponse(['status' => 'Credenciales inválidas'], Response::HTTP_UNAUTHORIZED);
         }
@@ -55,6 +61,7 @@ class ClienteController extends AbstractController
         return new JsonResponse([
             'status' => 'Inicio de sesión exitoso',
             'user' => [
+                'token' => $token,
                 'id' => $usuario->getId(),
                 'email' => $usuario->getEmail(),
                 'nombre' => $usuario->getNombre(),
@@ -136,6 +143,61 @@ class ClienteController extends AbstractController
 
         return new JsonResponse(['status' => 'Compra finalizada con éxito'], Response::HTTP_OK);
     }
+    /*public function finalizarCompra(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $userId = $data['userId'] ?? null;
+        $precioTotal = $data['precioTotal'] ?? 0;
+        $productos = $data['productos'] ?? [];
+
+        // Verificar que el usuario existe
+        $usuario = $entityManager->getRepository(Usuario::class)->find($userId);
+        if (!$usuario) {
+            return new JsonResponse(['error' => 'Usuario no encontrado'], JsonResponse::HTTP_NOT_FOUND);
+        }
+
+        // Crear una nueva Solicitud
+        $solicitud = new Solicitud();
+        $solicitud->setPrecioSolicitud($precioTotal); // Asignamos el precio total
+        $entityManager->persist($solicitud);
+
+        // Asociar la solicitud al usuario
+        $usuario->setIdSolicitud($solicitud); // Asociamos la solicitud al usuario
+        $entityManager->persist($usuario);
+
+        // Crear la entidad Compra
+        $compra = new Compra();
+
+        // Crear las adquisiciones (productos solicitados) como ArrayCollection
+        $adquisiciones = new ArrayCollection();  // Asegúrate de usar ArrayCollection aquí
+
+        foreach ($productos as $productoData) {
+            $producto = $entityManager->getRepository(Producto::class)->find($productoData['id']);
+            if (!$producto) {
+                return new JsonResponse(['error' => 'Producto no encontrado: ' . $productoData['id']], JsonResponse::HTTP_NOT_FOUND);
+            }
+
+            // Crear una nueva instancia de ProductoSolicitado
+            $productoSolicitado = new ProductoSolicitado();
+            $productoSolicitado->setIdProducto($producto);  // Asociamos el producto
+            $productoSolicitado->setIdSolicitud($solicitud);  // Asociamos la solicitud
+            $entityManager->persist($productoSolicitado);
+
+            // Añadir a la colección de adquisiciones
+            $adquisiciones->add($productoSolicitado);
+        }
+
+        // Asociamos las adquisiciones (productos solicitados) con la compra
+        $compra->setAdquisiciones($adquisiciones);  // Aquí pasamos la colección correctamente
+        $entityManager->persist($compra);  // Guardamos la compra
+
+        // Guardar
+        $entityManager->flush();
+
+        // Devolver una respuesta de éxito
+        return new JsonResponse(['status' => 'Compra finalizada con éxito'], JsonResponse::HTTP_OK);
+    }*/
+
 
 
     private function convertToJson($data): JsonResponse

@@ -38,6 +38,7 @@ class ProductoController extends AbstractController
 
 
     #[Route('/anadirProducto', name: 'app_add_producto', methods: ['POST'])]
+    #[IsGranted("ROLE_ADMIN")]
     public function addProducto(Request $request, ProductoRepository $productoRepository): JsonResponse
     {
         // Decodificamos el contenido de la solicitud JSON
@@ -76,6 +77,7 @@ class ProductoController extends AbstractController
 
 
     #[Route('/producto/delete/{id}', name: 'app_producto_delete', methods: ['DELETE'])]
+    #[IsGranted("ROLE_ADMIN")]
     public function deleteProducto(int $id, ProductoRepository $productoRepository): Response
     {
         $producto = $productoRepository->find($id);
@@ -84,15 +86,14 @@ class ProductoController extends AbstractController
             return new JsonResponse(['status' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
         }
 
-        $entityManager = $this->getDoctrine()->getManager();
-        $entityManager->remove($producto);
-        $entityManager->flush();
+        $productoRepository->deleteProducto($producto);
 
         return new JsonResponse(['status' => 'Producto eliminado'], Response::HTTP_OK);
     }
 
 
     #[Route('/producto/editar/{id}', name: 'app_producto_editar', methods: ['PUT'])]
+    #[IsGranted("ROLE_ADMIN")]
     public function editProducto(int $id, Request $request, ProductoRepository $productoRepository): JsonResponse
     {
         $producto = $productoRepository->find($id);

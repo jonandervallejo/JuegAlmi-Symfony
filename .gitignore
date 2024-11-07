@@ -7,6 +7,7 @@
 /public/bundles/
 /var/
 /vendor/
+/.env
 ###< symfony/framework-bundle ###
 
 ###> phpunit/phpunit ###
@@ -28,4 +29,3 @@
 /config/jwt/*.pem
 ###< lexik/jwt-authentication-bundle ###
 
-.env

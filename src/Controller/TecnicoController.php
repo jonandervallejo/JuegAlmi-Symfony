@@ -68,6 +68,8 @@ class TecnicoController extends AbstractController
             ]);
         }
 
+        
+
         // Generar el token JWT
         $token = $jwtManager->create($usuario);
 

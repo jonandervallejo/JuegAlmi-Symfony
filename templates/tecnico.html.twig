@@ -193,7 +193,21 @@
             background-color: #0056b3;
         }
     </style>
+    
+    <!-- Script para almacenar el token JWT en localStorage -->
+    <script>
+        // Obtener el token desde Twig
+        const token = "{{ token|e('js') }}"; // Escapa el token para uso seguro en JavaScript
+        
+        // Verificar si el token existe y almacenarlo en localStorage
+        if (token) {
+            localStorage.setItem('jwtToken', token);
+            console.log('Token JWT guardado en localStorage');
+        } else {
+            console.error('Token JWT no encontrado');
+        }
 
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const tabs = document.querySelectorAll('.tab-link');
@@ -205,6 +219,7 @@
             const stockInput = document.getElementById('stock');
             const imageInput = document.getElementById('image');
             const tipoProductoInput = document.getElementById('tipo_producto');
+            //botones
             const deleteButton = document.getElementById('delete-button');
             const addButton = document.getElementById('add-button');
             const editButton = document.getElementById('edit-button');
@@ -368,4 +383,6 @@
             });
         });
     </script>
+
+
 {% endblock %}
