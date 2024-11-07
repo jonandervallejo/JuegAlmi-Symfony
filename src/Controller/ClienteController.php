@@ -98,6 +98,12 @@ class ClienteController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $userId = $data['userId'] ?? null;
 
+        //return new JsonResponse($data);
+
+        if (!$userId) {
+            return new JsonResponse(['error' => 'El ID de usuario no está presente en la solicitud'], Response::HTTP_BAD_REQUEST);
+        }
+
         // Buscar al usuario por ID
         $usuario = $entityManager->getRepository(Usuario::class)->find($userId);
 
@@ -107,8 +113,8 @@ class ClienteController extends AbstractController
         }
 
         // Crear una nueva instancia de Compra
-        $compra = new Compra();
-        $compra->setPrecioSolicitud($data['precioTotal']); // Precio total de la compra
+        $solicitud = new Solicitud();
+        $solicitud->setPrecioSolicitud($data['precioTotal']); // Precio total de la compra
 
         // Iterar por los productos en el carrito y procesarlos
         foreach ($data['productos'] as $productoData) {
@@ -125,20 +131,20 @@ class ClienteController extends AbstractController
             $productoSolicitado->setIdProducto($producto); // Asignar el objeto Producto
 
             // Asignar ProductoSolicitado a la compra
-            $compra->addProductoSolicitado($productoSolicitado);
+            $solicitud->addProductoSolicitado($productoSolicitado);
             $entityManager->persist($productoSolicitado);
         }
 
         // Asignar la solicitud al usuario actual
         $usuario = $entityManager->getRepository(Usuario::class)->find($userId);
         if ($usuario) {
-            $compra->addUsuario($usuario);
+            $solicitud->addUsuario($usuario);
         } else {
             return new JsonResponse(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
         }
 
         // Persistir la compra en la base de datos
-        $entityManager->persist($compra);
+        $entityManager->persist($solicitud);
         $entityManager->flush();
 
         return new JsonResponse(['status' => 'Compra finalizada con éxito'], Response::HTTP_OK);

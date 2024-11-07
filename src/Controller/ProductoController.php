@@ -37,7 +37,7 @@ class ProductoController extends AbstractController
 
 
 
-    #[Route('/anadirProducto', name: 'app_add_producto', methods: ['POST'])]
+    #[Route('/api/anadirProducto', name: 'app_add_producto', methods: ['POST'])]
     #[IsGranted("ROLE_ADMIN")]
     public function addProducto(Request $request, ProductoRepository $productoRepository): JsonResponse
     {
@@ -76,7 +76,7 @@ class ProductoController extends AbstractController
     }
 
 
-    #[Route('/producto/delete/{id}', name: 'app_producto_delete', methods: ['DELETE'])]
+    #[Route('/api/producto/delete/{id}', name: 'app_producto_delete', methods: ['DELETE'])]
     #[IsGranted("ROLE_ADMIN")]
     public function deleteProducto(int $id, ProductoRepository $productoRepository): Response
     {
@@ -92,7 +92,7 @@ class ProductoController extends AbstractController
     }
 
 
-    #[Route('/producto/editar/{id}', name: 'app_producto_editar', methods: ['PUT'])]
+    #[Route('/api/producto/editar/{id}', name: 'app_producto_editar', methods: ['PUT'])]
     #[IsGranted("ROLE_ADMIN")]
     public function editProducto(int $id, Request $request, ProductoRepository $productoRepository): JsonResponse
     {
@@ -104,18 +104,20 @@ class ProductoController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
 
+        //dd($data);
+
         if (empty($data)) {
             throw new NotFoundHttpException('Faltan parametros');
         }
 
         $producto->setNombre($data['nombre']);
         $producto->setDescripcion($data['descripcion']);
-        $producto->setStock($data['stock']);
-        $producto->setImagen($data['imagen']);
         $producto->setPrecio($data['precio']);
+        $producto->setStock($data['stock']);
+        $producto->setImagen($data['imagen']);    
         $producto->setTipoProducto($data['tipo_producto']);
 
-        $productoRepository->anadirProducto($producto, true);
+        $productoRepository->anadirProducto($producto);
 
         return new JsonResponse([
             'status' => 'Producto actualizado exitosamente',

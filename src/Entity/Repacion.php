@@ -9,10 +9,10 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: RepacionRepository::class)]
 class Repacion extends Solicitud
 {
-    #[ORM\Id]
+  /*  #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    private ?int $id = null;
+    private ?int $id = null; */
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTimeInterface $fecha_inicio = null;
@@ -23,10 +23,10 @@ class Repacion extends Solicitud
     #[ORM\Column(length: 255)]
     private ?string $incidencia = null;
 
-    public function getId(): ?int
+    /*public function getId(): ?int
     {
         return $this->id;
-    }
+    } */
 
     public function getFechaInicio(): ?\DateTimeInterface
     {

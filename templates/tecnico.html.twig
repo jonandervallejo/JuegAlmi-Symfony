@@ -193,7 +193,7 @@
             background-color: #0056b3;
         }
     </style>
-    
+
     <!-- Script para almacenar el token JWT en localStorage -->
     <script>
         // Obtener el token desde Twig
@@ -224,6 +224,9 @@
             const addButton = document.getElementById('add-button');
             const editButton = document.getElementById('edit-button');
 
+            // Obtener el token de localStorage
+            const token = localStorage.getItem('jwtToken');
+
             // Maneja el cambio de pestañas
             tabs.forEach(tab => {
                 tab.addEventListener('click', function () {
@@ -241,26 +244,21 @@
 
                 if (productId) {
                     // Realiza una solicitud para obtener los detalles del producto seleccionado
-                    fetch(`/getProducto/${productId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            // Rellena los campos del formulario con los datos del producto
-                            nameInput.value = data.nombre;
-                            descriptionTextarea.value = data.descripcion;
-                            priceInput.value = data.precio;
-                            stockInput.value = data.stock;
-                            imageInput.value = data.imagen;
-                            tipoProductoInput.value = data.tipo_producto;
-                        })
-                        .catch(error => console.error('Error:', error));
-                } else {
-                    // Limpia los campos del formulario si no se selecciona ningún producto
-                    nameInput.value = '';
-                    descriptionTextarea.value = '';
-                    priceInput.value = '';
-                    stockInput.value = '';
-                    imageInput.value = '';
-                    tipoProductoInput.value = '';
+                    fetch(`/getProducto/${productId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        nameInput.value = data.nombre;
+                        descriptionTextarea.value = data.descripcion;
+                        priceInput.value = data.precio;
+                        stockInput.value = data.stock;
+                        imageInput.value = data.imagen;
+                        tipoProductoInput.value = data.tipo_producto;
+                    })
+                    .catch(error => console.error('Error:', error));
                 }
             });
 
@@ -269,15 +267,16 @@
                 const productId = productSelect.value;
 
                 if (productId) {
-                    // Realiza una solicitud para eliminar el producto seleccionado
-                    fetch(`/producto/delete/${productId}`, {
-                        method: 'DELETE'
+                    fetch(`/api/producto/delete/${productId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
                     })
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'Producto eliminado') {
                             alert('Producto eliminado exitosamente');
-                            // Limpia los campos del formulario
                             productSelect.value = '';
                             nameInput.value = '';
                             descriptionTextarea.value = '';
@@ -290,6 +289,7 @@
                         }
                     })
                     .catch(error => console.error('Error:', error));
+                    
                 } else {
                     alert('Seleccione un producto para eliminar');
                 }
@@ -305,10 +305,10 @@
                 const tipoProducto = tipoProductoInput.value;
 
                 if (name && description && price && stock && image && tipoProducto) {
-                    // Realiza una solicitud para añadir un nuevo producto
-                    fetch('/addProducto', {
+                    fetch('/api/anadirProducto', {
                         method: 'POST',
                         headers: {
+                            'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
@@ -337,6 +337,7 @@
                         }
                     })
                     .catch(error => console.error('Error:', error));
+
                 } else {
                     alert('Complete todos los campos para añadir un producto');
                 }
@@ -353,10 +354,10 @@
                 const tipoProducto = tipoProductoInput.value;
 
                 if (productId && name && description && price && stock && image && tipoProducto) {
-                    // Realiza una solicitud para editar el producto seleccionado
-                    fetch(`/producto/editar/${productId}`, {
+                    fetch(`/api/producto/editar/${productId}`, {
                         method: 'PUT',
                         headers: {
+                            'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
@@ -377,6 +378,7 @@
                         }
                     })
                     .catch(error => console.error('Error:', error));
+
                 } else {
                     alert('Complete todos los campos para editar el producto');
                 }
