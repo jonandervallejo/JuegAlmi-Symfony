@@ -98,7 +98,7 @@ class ClienteController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $userId = $data['userId'] ?? null;
 
-        //return new JsonResponse($data);
+        return new JsonResponse($data);
 
         if (!$userId) {
             return new JsonResponse(['error' => 'El ID de usuario no está presente en la solicitud'], Response::HTTP_BAD_REQUEST);

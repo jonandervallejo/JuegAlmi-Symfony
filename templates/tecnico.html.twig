@@ -19,6 +19,13 @@
         {% if rol == 'tecnicoC' %}
             <div id="tab-1" class="tab-content current">
                 <h3>Reparaciones</h3>
+                <ul class="sub-tabs">
+                    <li class="sub-tab-link current" data-tab="sub-tab-1">Consolas</li>
+                </ul>
+                <div id="sub-tab-1" class="sub-tab-content current">
+                    <!-- CONTENIDO DE REPARACION DE CONSOLAS -->
+                    <!--******************************************-->
+                </div>
             </div>
             <div id="tab-2" class="tab-content">
                 <h3>Productos</h3>
@@ -58,7 +65,7 @@
                             <select id="tipo_producto" name="tipo_producto">
                                 <option value="videojuegos">Videojuegos</option>
                                 <option value="consolas">Consolas</option>
-                                <option value="smartphones">Smartphones</option>
+                                <option value="tablets_smartphones">Tablets y Smartphones</option>
                             </select>
                         </div>
                         <button type="button" id="delete-button" class="btn btn-danger">Eliminar Producto</button>
@@ -70,6 +77,13 @@
         {% elseif rol == 'tecnicoM' %}
             <div id="tab-3" class="tab-content current">
                 <h3>Reparaciones</h3>
+                <ul class="sub-tabs">
+                    <li class="sub-tab-link current" data-tab="sub-tab-2">Smartphones</li>
+                </ul>
+                <div id="sub-tab-2" class="sub-tab-content current">
+                    <!-- CONTENIDO DE REPARACION DE SMARTPHONES -->
+                    <!--******************************************-->
+                </div>
             </div>
             <div id="tab-4" class="tab-content">
                 <h3>Productos</h3>
@@ -109,7 +123,7 @@
                             <select id="tipo_producto" name="tipo_producto">
                                 <option value="videojuegos">Videojuegos</option>
                                 <option value="consolas">Consolas</option>
-                                <option value="smartphones">Smartphones</option>
+                                <option value="tablets_smartphones">Tablets y Smartphones</option>
                             </select>
                         </div>
                         <button type="button" id="delete-button" class="btn btn-danger">Eliminar Producto</button>
@@ -150,6 +164,33 @@
             background: #f9f9f9;
         }
         .tab-content.current {
+            display: block;
+        }
+        .sub-tabs {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            justify-content: space-around;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .sub-tab-link {
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            border-radius: 5px 5px 0 0;
+        }
+        .sub-tab-link.current {
+            background: #5a6268;
+        }
+        .sub-tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-top: none;
+            background: #e9ecef;
+        }
+        .sub-tab-content.current {
             display: block;
         }
         .form-group {
@@ -194,24 +235,12 @@
         }
     </style>
 
-    <!-- Script para almacenar el token JWT en localStorage -->
-    <script>
-        // Obtener el token desde Twig
-        const token = "{{ token|e('js') }}"; // Escapa el token para uso seguro en JavaScript
-        
-        // Verificar si el token existe y almacenarlo en localStorage
-        if (token) {
-            localStorage.setItem('jwtToken', token);
-            console.log('Token JWT guardado en localStorage');
-        } else {
-            console.error('Token JWT no encontrado');
-        }
-
-    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const tabs = document.querySelectorAll('.tab-link');
             const contents = document.querySelectorAll('.tab-content');
+            const subTabs = document.querySelectorAll('.sub-tab-link');
+            const subContents = document.querySelectorAll('.sub-tab-content');
             const productSelect = document.getElementById('product-select');
             const nameInput = document.getElementById('name');
             const descriptionTextarea = document.getElementById('description');
@@ -219,13 +248,9 @@
             const stockInput = document.getElementById('stock');
             const imageInput = document.getElementById('image');
             const tipoProductoInput = document.getElementById('tipo_producto');
-            //botones
             const deleteButton = document.getElementById('delete-button');
             const addButton = document.getElementById('add-button');
             const editButton = document.getElementById('edit-button');
-
-            // Obtener el token de localStorage
-            const token = localStorage.getItem('jwtToken');
 
             // Maneja el cambio de pestañas
             tabs.forEach(tab => {
@@ -238,27 +263,43 @@
                 });
             });
 
+            // Maneja el cambio de sub-pestañas
+            subTabs.forEach(subTab => {
+                subTab.addEventListener('click', function () {
+                    subTabs.forEach(st => st.classList.remove('current'));
+                    subContents.forEach(sc => sc.classList.remove('current'));
+
+                    subTab.classList.add('current');
+                    document.getElementById(subTab.getAttribute('data-tab')).classList.add('current');
+                });
+            });
+
             // Maneja la selección de un producto en el desplegable
             productSelect.addEventListener('change', function () {
                 const productId = this.value;
 
                 if (productId) {
                     // Realiza una solicitud para obtener los detalles del producto seleccionado
-                    fetch(`/getProducto/${productId}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        nameInput.value = data.nombre;
-                        descriptionTextarea.value = data.descripcion;
-                        priceInput.value = data.precio;
-                        stockInput.value = data.stock;
-                        imageInput.value = data.imagen;
-                        tipoProductoInput.value = data.tipo_producto;
-                    })
-                    .catch(error => console.error('Error:', error));
+                    fetch(`/getProducto/${productId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Rellena los campos del formulario con los datos del producto
+                            nameInput.value = data.nombre;
+                            descriptionTextarea.value = data.descripcion;
+                            priceInput.value = data.precio;
+                            stockInput.value = data.stock;
+                            imageInput.value = data.imagen;
+                            tipoProductoInput.value = data.tipo_producto;
+                        })
+                        .catch(error => console.error('Error:', error));
+                } else {
+                    // Limpia los campos del formulario si no se selecciona ningún producto
+                    nameInput.value = '';
+                    descriptionTextarea.value = '';
+                    priceInput.value = '';
+                    stockInput.value = '';
+                    imageInput.value = '';
+                    tipoProductoInput.value = '';
                 }
             });
 
@@ -267,16 +308,15 @@
                 const productId = productSelect.value;
 
                 if (productId) {
+                    // Realiza una solicitud para eliminar el producto seleccionado
                     fetch(`/api/producto/delete/${productId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
+                        method: 'DELETE'
                     })
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'Producto eliminado') {
                             alert('Producto eliminado exitosamente');
+                            // Limpia los campos del formulario
                             productSelect.value = '';
                             nameInput.value = '';
                             descriptionTextarea.value = '';
@@ -289,7 +329,6 @@
                         }
                     })
                     .catch(error => console.error('Error:', error));
-                    
                 } else {
                     alert('Seleccione un producto para eliminar');
                 }
@@ -305,10 +344,10 @@
                 const tipoProducto = tipoProductoInput.value;
 
                 if (name && description && price && stock && image && tipoProducto) {
+                    // Realiza una solicitud para añadir un nuevo producto
                     fetch('/api/anadirProducto', {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
@@ -337,7 +376,6 @@
                         }
                     })
                     .catch(error => console.error('Error:', error));
-
                 } else {
                     alert('Complete todos los campos para añadir un producto');
                 }
@@ -354,10 +392,10 @@
                 const tipoProducto = tipoProductoInput.value;
 
                 if (productId && name && description && price && stock && image && tipoProducto) {
+                    // Realiza una solicitud para editar el producto seleccionado
                     fetch(`/api/producto/editar/${productId}`, {
                         method: 'PUT',
                         headers: {
-                            'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
@@ -378,13 +416,10 @@
                         }
                     })
                     .catch(error => console.error('Error:', error));
-
                 } else {
                     alert('Complete todos los campos para editar el producto');
                 }
             });
         });
     </script>
-
-
 {% endblock %}
