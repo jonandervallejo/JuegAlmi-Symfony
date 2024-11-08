@@ -103,38 +103,59 @@ class ClienteController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        // Validar los datos proporcionados
+        // Paso 1: Validar si el token de reCAPTCHA está presente en la solicitud
+        if (empty($data['gRecaptchaToken'])) {
+            return new JsonResponse(['status' => 'Token de reCAPTCHA faltante'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Paso 2: Validar el token de reCAPTCHA con Google
+        $recaptchaResponse = $this->httpClient->request('POST', 'https://www.google.com/recaptcha/api/siteverify', [
+            'body' => [
+                'secret' => $this->recaptchaSecretKey,
+                'response' => $data['gRecaptchaToken']
+            ]
+        ]);
+
+        $responseData = $recaptchaResponse->toArray();
+
+        // En reCAPTCHA v2 solo comprobamos si 'success' es true
+        if (!$responseData['success']) {
+            return new JsonResponse(['status' => 'Token de reCAPTCHA no válido'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Paso 3: Validar los datos proporcionados
         if (empty($data['nombre']) || empty($data['apellido1']) || empty($data['apellido2']) || empty($data['email']) || empty($data['password'])) {
             return new JsonResponse(['status' => 'Faltan parámetros'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Verificar si el usuario ya existe
+        // Paso 4: Verificar si el usuario ya existe
         $existingUsuario = $usuarioRepository->findOneBy(['email' => $data['email']]);
         if ($existingUsuario) {
-            return new JsonResponse(['status' => 'El email proporcionado ya esta en uso'], Response::HTTP_CONFLICT);
+            return new JsonResponse(['status' => 'El email proporcionado ya está en uso'], Response::HTTP_CONFLICT);
         }
 
-        // Crear una nueva instancia de Usuario y establecer sus propiedades
+        // Paso 5: Crear y guardar una nueva instancia de Usuario
         $usuario = new Usuario();
         $usuario->setNombre($data['nombre']);
         $usuario->setApellido1($data['apellido1']);
         $usuario->setApellido2($data['apellido2']);
         $usuario->setEmail($data['email']);
         $usuario->setPassword($data['password']);
-        $usuario->setRoles(['ROLE_USER']); //le damos por default el rol de usuario
-        $usuario->setRol('cliente'); //le damos por default el rol cliente al registrarse
+        $usuario->setRoles('ROLE_USER'); // Rol por defecto para nuevos usuarios
+        $usuario->setRol('cliente'); // Rol por defecto para nuevos usuarios
 
-        //Guardar el nuevo usuario en la base de datos
         $usuarioRepository->addUser($usuario);
 
-        return new JsonResponse(['status' => 'Usuario creado exitosamente', 
-        'usuario' => [
-            'id' => $usuario->getId(),
-            'nombre' => $usuario->getNombre(),
-            'email' => $usuario->getEmail(),
-            'apellido1' => $usuario->getApellido1(),
-            'apellido2' => $usuario->getApellido2()         
-        ]], Response::HTTP_CREATED);
+        return new JsonResponse([
+            'status' => 'Usuario creado exitosamente',
+            'usuario' => [
+                'id' => $usuario->getId(),
+                'nombre' => $usuario->getNombre(),
+                'email' => $usuario->getEmail(),
+                'apellido1' => $usuario->getApellido1(),
+                'apellido2' => $usuario->getApellido2()
+            ]
+        ], Response::HTTP_CREATED);
     }
 
     //PROBAR
