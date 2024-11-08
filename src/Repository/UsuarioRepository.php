@@ -33,6 +33,12 @@ class UsuarioRepository extends ServiceEntityRepository
         return $ubicacion; // Retornar la ubicación guardada si es necesario
     }
 
+    public function addUser(Usuario $usuario)
+    {
+        $this->getEntityManager()->persist($usuario);
+        $this->getEntityManager()->flush();
+    }
+
 
     //    /**
     //     * @return Usuario[] Returns an array of Usuario objects

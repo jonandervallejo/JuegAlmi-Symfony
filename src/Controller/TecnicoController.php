@@ -68,12 +68,10 @@ class TecnicoController extends AbstractController
             ]);
         }
 
-        
-
         // Generar el token JWT
         $token = $jwtManager->create($usuario);
 
-        // Renderizar la plantilla y pasarle el token JWT y la información del usuario
+        //redirijir a la ventana de tecnicos y pasarle el token JWT y la información del usuario
         return $this->render('tecnico.html.twig', [
             'token' => $token,
             'rol' => $usuario->getRol(),
@@ -82,12 +80,7 @@ class TecnicoController extends AbstractController
         ]);
     }
 
-    //mostrar la vista de tecnicos
-    #[Route('/hidden',name: 'tecnico')]
-    public function tabs(): Response
-    {
-        return $this->render('tecnico.html.twig');
-    }
+
 
 
    /* #[Route('/gestionarReparacion/{id}', name: 'app_gestionar_reparacion', methods: ['POST'])]
@@ -120,6 +113,7 @@ class TecnicoController extends AbstractController
         return new JsonResponse(['status' => 'Reparacion actualizada'], Response::HTTP_OK);
     }*/
 
+    //FUNCIONA
     #[Route('/getProducto/{id}', name: 'app_get_product', methods: ['GET'])]
     public function getProduct(ProductoRepository $productoRepository, $id): JsonResponse
     {
@@ -149,8 +143,8 @@ class TecnicoController extends AbstractController
 
     //PROBAR CUANDO SE HAGAN REPARACIONES
     //metodo para obtener los productos solicitados para reparación
-    #[Route('/getProductosSolicitadosParaReparacion', name: 'app_get_productos_solicitados_para_reparacion', methods: ['GET'])]
-    public function getProductosSolicitadosParaReparacion(RepacionRepository $reparacionRepository): JsonResponse
+    #[Route('/getProductosSolicitadosReparacion', name: 'app_get_productos_solicitados_para_reparacion', methods: ['GET'])]
+    public function getProductosSolicitadosReparacion(RepacionRepository $reparacionRepository): JsonResponse
     {
         $reparaciones = $reparacionRepository->findAll();
         $productosSolicitados = [];

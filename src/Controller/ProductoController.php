@@ -12,6 +12,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -30,7 +31,7 @@ class ProductoController extends AbstractController
     {
         // Obtener productos filtrados por tipo
         $productos = $productoRepository->findBy(['tipo_producto' => $tipo]);
-
+        //dd($productos);
         // Utilizar convertToJson para formatear la respuesta JSON
         return $this->convertToJson($productos);
     }
@@ -137,26 +138,29 @@ class ProductoController extends AbstractController
     private function convertToJson($data): JsonResponse
     {
         // Configuramos los encoders y normalizadores
-        $encoders = [new XmlEncoder(), new JsonEncoder()];
-        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer()];
+        $encoders = [new JsonEncoder()];
+        $defaultContext = [
+            DateTimeNormalizer::FORMAT_KEY => 'Y-m-d',
+            // Ignoramos la propiedad productoSolicitados para evitar serializar colecciones innecesarias
+            AbstractNormalizer::IGNORED_ATTRIBUTES => ['productoSolicitados'],
+            // Evitamos problemas de referencia circular
+            AbstractNormalizer::CIRCULAR_REFERENCE_HANDLER => function ($object) {
+                return $object->getId();
+            }
+        ];
+        $normalizers = [new DateTimeNormalizer(), new ObjectNormalizer(null, null, null, null, null, null, $defaultContext)];
 
         // Creamos el servicio Serializer
         $serializer = new Serializer($normalizers, $encoders);
 
-        // Normalizamos los datos
-        $normalized = $serializer->normalize($data, null, [
-            DateTimeNormalizer::FORMAT_KEY => 'Y-m-d',
-            ObjectNormalizer::CIRCULAR_REFERENCE_HANDLER => function ($object) {
-                return $object->getId(); // Para evitar problemas de referencia circular
-            }
-        ]);
-
-        // Convertimos los datos normalizados a JSON
+        // Normalizamos y serializamos los datos en formato JSON
+        $normalized = $serializer->normalize($data);
         $jsonContent = $serializer->serialize($normalized, 'json');
 
         // Retornamos la respuesta en formato JSON
         return JsonResponse::fromJsonString($jsonContent, 200);
     }
+
 
 
 }

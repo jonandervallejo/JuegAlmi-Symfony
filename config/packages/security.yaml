@@ -15,6 +15,7 @@ security:
             stateless: true
             jwt: ~  # Habilita la autenticación JWT para la ruta `/api`
 
+
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
@@ -32,6 +33,8 @@ security:
     # Note: Only the *first* access control that matches will be used
     access_control:
         - { path: ^/api, roles: ROLE_ADMIN  } #MIO
+        #- { path: ^/log, roles: IS_AUTHENTICATED_ANONYMOUSLY  }
+
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
 
