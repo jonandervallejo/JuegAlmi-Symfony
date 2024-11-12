@@ -15,6 +15,7 @@ class SolicitudRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Solicitud::class);
     }
+    
 
     //    /**
     //     * @return Solicitud[] Returns an array of Solicitud objects

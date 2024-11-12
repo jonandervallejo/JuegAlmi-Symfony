@@ -2,10 +2,13 @@
 
 namespace App\Controller;
 
+use App\Entity\Alquiler;
 use App\Entity\Compra;
 use App\Entity\Producto;
 use App\Entity\ProductoSolicitado;
+use App\Entity\Repacion;
 use App\Entity\Solicitud;
+use App\Entity\Ubicacion;
 use App\Entity\Usuario;
 use App\Repository\UbicacionRepository;
 use App\Repository\UsuarioRepository;
@@ -17,6 +20,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
@@ -74,91 +78,96 @@ class ClienteController extends AbstractController
         ]);
     }
 
-    //PROBAR
-    #[Route('/guardarUbicacion', name: 'app_guardar_ubicacion', methods: ['POST'])]
-    public function guardarUbicacion(Request $request, UsuarioRepository $usuarioRepository): JsonResponse
+    //PROBAR POR IONIC O ANDROID
+    #[Route('/usuario', name: 'mostrar_usuario', methods: ['GET'])]
+    public function mostrarUsuario(TokenStorageInterface $tokenStorage, UsuarioRepository $usuarioRepository): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
+        // Obtener el token de autenticación
+        $token = $tokenStorage->getToken();
 
-        // Validar que se proporcionen los parámetros necesarios
-        if (empty($data['idUsuario']) || empty($data['latitud']) || empty($data['longitud'])) {
-            return new JsonResponse(['status' => 'Faltan parámetros'], Response::HTTP_BAD_REQUEST);
+        if (!$token) {
+            return new JsonResponse(['status' => 'Token no encontrado'], Response::HTTP_UNAUTHORIZED);
         }
 
-        // Obtener el usuario actualmente autenticado
-        $usuario = $usuarioRepository->find($data['idUsuario']);
+        // Obtener el usuario autenticado a partir del token
+        $usuario = $token->getUser();
 
-        if (!$usuario) {
-            return new JsonResponse(['status' => 'Usuario no encontrado'], Response::HTTP_UNAUTHORIZED);
+        if (!$usuario instanceof Usuario) {
+            return new JsonResponse(['status' => 'Usuario no autenticado'], Response::HTTP_UNAUTHORIZED);
         }
 
-        $usuarioRepository->guardarUbicacion($usuario, $data['latitud'], $data['longitud']);
-
-        return new JsonResponse(['status' => 'Ubicación guardada correctamente'], Response::HTTP_CREATED);
+        // Devolver los datos del usuario en una respuesta JSON
+        return new JsonResponse([
+            'id' => $usuario->getId(),
+            'nombre' => $usuario->getNombre(),
+            'apellido1' => $usuario->getApellido1(),
+            'apellido2' => $usuario->getApellido2(),
+            'email' => $usuario->getEmail(),
+            'rol' => $usuario->getRol()
+        ], Response::HTTP_OK);
     }
 
-    //PROBAR
+
+    //FUNCIONA
     #[Route('/crear-usuario', name: 'crear_usuario', methods: ['POST'])]
     public function crearUsuario(Request $request, UsuarioRepository $usuarioRepository): JsonResponse
     {
+        // Obtener los datos del cuerpo de la solicitud
         $data = json_decode($request->getContent(), true);
 
-        // Paso 1: Validar si el token de reCAPTCHA está presente en la solicitud
-        if (empty($data['gRecaptchaToken'])) {
-            return new JsonResponse(['status' => 'Token de reCAPTCHA faltante'], Response::HTTP_BAD_REQUEST);
+        // Validar que los datos sean correctos
+        if (!isset($data['nombre'], $data['apellido1'], $data['apellido2'], $data['email'], $data['password'])) {
+            return new JsonResponse(['error' => 'Datos incompletos o inválidos recibidos.'], 400);
         }
 
-        // Paso 2: Validar el token de reCAPTCHA con Google
-        $recaptchaResponse = $this->httpClient->request('POST', 'https://www.google.com/recaptcha/api/siteverify', [
-            'body' => [
-                'secret' => $this->recaptchaSecretKey,
-                'response' => $data['gRecaptchaToken']
-            ]
-        ]);
-
-        $responseData = $recaptchaResponse->toArray();
-
-        // En reCAPTCHA v2 solo comprobamos si 'success' es true
-        if (!$responseData['success']) {
-            return new JsonResponse(['status' => 'Token de reCAPTCHA no válido'], Response::HTTP_BAD_REQUEST);
-        }
-
-        // Paso 3: Validar los datos proporcionados
-        if (empty($data['nombre']) || empty($data['apellido1']) || empty($data['apellido2']) || empty($data['email']) || empty($data['password'])) {
-            return new JsonResponse(['status' => 'Faltan parámetros'], Response::HTTP_BAD_REQUEST);
-        }
-
-        // Paso 4: Verificar si el usuario ya existe
         $existingUsuario = $usuarioRepository->findOneBy(['email' => $data['email']]);
         if ($existingUsuario) {
             return new JsonResponse(['status' => 'El email proporcionado ya está en uso'], Response::HTTP_CONFLICT);
         }
 
-        // Paso 5: Crear y guardar una nueva instancia de Usuario
+        // Crear un nuevo objeto de usuario
         $usuario = new Usuario();
         $usuario->setNombre($data['nombre']);
         $usuario->setApellido1($data['apellido1']);
         $usuario->setApellido2($data['apellido2']);
         $usuario->setEmail($data['email']);
         $usuario->setPassword($data['password']);
-        $usuario->setRoles('ROLE_USER'); // Rol por defecto para nuevos usuarios
+        $usuario->setRoles(['ROLE_USER']); // Rol por defecto para nuevos usuarios
         $usuario->setRol('cliente'); // Rol por defecto para nuevos usuarios
 
         $usuarioRepository->addUser($usuario);
 
-        return new JsonResponse([
-            'status' => 'Usuario creado exitosamente',
-            'usuario' => [
-                'id' => $usuario->getId(),
-                'nombre' => $usuario->getNombre(),
-                'email' => $usuario->getEmail(),
-                'apellido1' => $usuario->getApellido1(),
-                'apellido2' => $usuario->getApellido2()
-            ]
-        ], Response::HTTP_CREATED);
+        // Devolver una respuesta de éxito
+        return new JsonResponse(['status' => 'Usuario creado con exito'], Response::HTTP_CREATED);
     }
 
-    //PROBAR
+
+    //PROBAR POR IONIC O ANDROID
+    #[Route('/eliminar-usuario', name: 'eliminar_usuario', methods: ['DELETE'])]
+    public function eliminarUsuario(TokenStorageInterface $tokenStorage, UsuarioRepository $usuarioRepository): JsonResponse
+    {
+        // Obtener el token de autenticación
+        $token = $tokenStorage->getToken();
+
+        if (!$token) {
+            return new JsonResponse(['status' => 'Token no encontrado'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Obtener el usuario autenticado a partir del token
+        $usuario = $token->getUser();
+
+        if (!$usuario instanceof Usuario) {
+            return new JsonResponse(['status' => 'Usuario no autenticado'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Eliminar el usuario de la base de datos
+        $usuarioRepository->deleteUser($usuario);
+
+        // Devolver una respuesta JSON indicando el resultado de la operación
+        return new JsonResponse(['status' => 'Usuario eliminado exitosamente'], Response::HTTP_OK);
+    }
+
+    //FUNCIONA
     #[Route('/finalizar-compra', name: 'finalizar_compra', methods: ['POST'])]
     public function finalizarCompra(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -209,64 +218,206 @@ class ClienteController extends AbstractController
 
         return new JsonResponse(['status' => 'Compra finalizada con éxito'], Response::HTTP_OK);
     }
-   /* public function finalizarCompra(Request $request, EntityManagerInterface $entityManager): JsonResponse
+
+
+    /*#[Route('/solicitar-reparacion', name: 'solicitar_reparacion', methods: ['POST'])]
+    public function solicitarReparacion(Request $request, EntityManagerInterface $entityManager, SolicitudRepository $solicitudRepository): JsonResponse
     {
-        // Verificar que los datos se reciban correctamente
+        // Obtener y decodificar los datos de la solicitud
         $rawContent = $request->getContent();
         $data = json_decode($rawContent, true);
-        $usuarioId=$data['userId'];
 
-        // Verificar si se reciben los datos esperados
-        if (!$data || !isset($data['userId']) || !isset($data['productos']) || !isset($data['precioTotal'])) {
+        // Validar que los datos sean correctos
+        if (!isset($data['productoId']) || !isset($data['incidencia'])) {
             return new JsonResponse(['error' => 'Datos incompletos o inválidos recibidos.'], 400);
         }
 
-        // Buscar al usuario por ID
-        $usuario = $entityManager->getRepository(Usuario::class)->find($usuarioId);
+        // Buscar el producto por ID
+        $producto = $entityManager->getRepository(Producto::class)->find($data['productoId']);
+        if (!$producto) {
+            return new JsonResponse(['error' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
+        }
 
-        // Verificar si el usuario existe
+        //$solicitudRepository->addProductoSolicitado();
+
+        // Crear una nueva instancia de Repacion
+        $reparacion = new Repacion();
+
+        // Asignar los datos a la reparación
+        $reparacion->setFechaInicio(new \DateTime()); // Fecha de inicio de la reparación
+        $reparacion->setIncidencia($data['incidencia']); // Descripción de la incidencia
+
+        // Persistir la reparación en la base de datos
+        $entityManager->persist($reparacion);
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Reparación solicitada con éxito'], Response::HTTP_OK);
+    }*/
+
+    #[Route('/solicitar-reparacion', name: 'solicitar_reparacion', methods: ['POST'])]
+    public function solicitarReparacion(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        // Obtener y decodificar los datos de la solicitud
+        $rawContent = $request->getContent();
+        $data = json_decode($rawContent, true);
+
+        // Validar que los datos sean correctos
+        if (!isset($data['productoId']) || !isset($data['incidencia'])) {
+            return new JsonResponse(['error' => 'Datos incompletos o inválidos recibidos.'], 400);
+        }
+
+        // Buscar el producto por ID
+        $producto = $entityManager->getRepository(Producto::class)->find($data['productoId']);
+        if (!$producto) {
+            return new JsonResponse(['error' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Crear una nueva instancia de Repacion
+        $reparacion = new Repacion();
+
+        // Asignar los datos a la reparación
+        $reparacion->setFechaInicio(new \DateTime()); // Fecha de inicio de la reparación
+        $reparacion->setIncidencia($data['incidencia']); // Descripción de la incidencia
+
+        // Persistir la reparación en la base de datos
+        $entityManager->persist($reparacion);
+        $entityManager->flush();
+
+        return new JsonResponse(['status' => 'Reparación solicitada con éxito'], Response::HTTP_OK);
+    }
+
+    //FUNCIONA
+    #[Route('/finalizar-alquiler', name: 'finalizar_alquiler', methods: ['POST'])]
+    public function finalizarAlquiler(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        // Obtener y decodificar los datos de la solicitud
+        $rawContent = $request->getContent();
+        $data = json_decode($rawContent, true);
+        $usuarioId = $data['userId'];
+
+        // Validar que los datos sean correctos
+        if (!$data || !isset($data['userId']) || !isset($data['productoId']) || /*!isset($data['fechaInicio']) || !isset($data['fechaFin']) */ !isset($data['precioTotal'])) {
+            return new JsonResponse(['error' => 'Datos incompletos o inválidos recibidos.'], 400);
+        }
+
+        // Buscar el usuario por ID
+        $usuario = $entityManager->getRepository(Usuario::class)->find($usuarioId);
         if (!$usuario) {
             return new JsonResponse(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
         }
 
-        // Crear una nueva instancia de Compra
-        $solicitud = new Solicitud();
-        $solicitud->setPrecioSolicitud($data['precioTotal']); // Precio total de la compra
-
-        // Iterar por los productos en el carrito y procesarlos
-        foreach ($data['productos'] as $productoData) {
-            // Buscar el objeto Producto a partir de su ID
-            $producto = $entityManager->getRepository(Producto::class)->find($productoData['id']);
-
-            // Verificar si el producto existe en la base de datos
-            if (!$producto) {
-                return new JsonResponse(['error' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
-            }
-
-            // Crear una instancia de ProductoSolicitado y asignar el producto
-            $productoSolicitado = new ProductoSolicitado();
-            $productoSolicitado->setIdProducto($producto); // Asignar el objeto Producto
-
-            // Asignar ProductoSolicitado a la compra
-            $solicitud->addProductoSolicitado($productoSolicitado);
-            $entityManager->persist($productoSolicitado);
+        // Buscar el producto por ID
+        $producto = $entityManager->getRepository(Producto::class)->find($data['productoId']);
+        if (!$producto) {
+            return new JsonResponse(['error' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
         }
 
-        // Asignar la solicitud al usuario actual
-        $usuario = $entityManager->getRepository(Usuario::class)->find($usuarioId);
-        if ($usuario) {
-            $solicitud->addUsuario($usuario);
-        } else {
-            return new JsonResponse(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
-        }
+        // Crear una nueva instancia de Alquiler (que hereda de Solicitud)
+        $alquiler = new Alquiler();
+        $alquiler->setPrecioSolicitud($data['precioTotal']); // Guardar el precio en la entidad Alquiler
 
-        // Persistir la compra en la base de datos
-        $entityManager->persist($solicitud);
+        //$alquiler->setFechaInicio(new \DateTime($data['fechaInicio']));
+        //$alquiler->setFechaFin(new \DateTime($data['fechaFin']));
+
+        $fechaInicio = new \DateTime(); // Fecha actual
+        $fechaFin = (clone $fechaInicio)->modify('+1 month'); // Fecha un mes después de la actual
+    
+        // Asignar las fechas al alquiler
+        $alquiler->setFechaInicio($fechaInicio);
+        $alquiler->setFechaFin($fechaFin);
+
+        // Crear una instancia de ProductoSolicitado y asignar el producto a la solicitud de alquiler
+        $productoSolicitado = new ProductoSolicitado();
+        $productoSolicitado->setIdProducto($producto);
+        $alquiler->addProductoSolicitado($productoSolicitado);
+        $entityManager->persist($productoSolicitado);
+
+        // Asignar el alquiler al usuario
+        $alquiler->addUsuario($usuario);
+
+        // Guardar el alquiler en la base de datos
+        $entityManager->persist($alquiler);
         $entityManager->flush();
 
-        return new JsonResponse(['status' => 'Compra finalizada con éxito'], Response::HTTP_OK);
-    } */
+        return new JsonResponse(['status' => 'Alquiler finalizado con éxito'], Response::HTTP_OK);
+    }
 
+    //PROBAR
+    /*#[Route('/guardar-ubicacion', name: 'guardar_ubicacion', methods: ['POST'])]
+    public function guardarUbicacion(Request $request, TokenStorageInterface $tokenStorage, UbicacionRepository $ubicacionRepository): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        // Validar los datos proporcionados
+        if (empty($data['latitude']) || empty($data['longitude'])) {
+            return new JsonResponse(['status' => 'Faltan parámetros'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Obtener el token de autenticación
+        $token = $tokenStorage->getToken();
+
+        if (!$token) {
+            return new JsonResponse(['status' => 'Token no encontrado'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Obtener el usuario autenticado a partir del token
+        $usuario = $token->getUser();
+
+        if (!$usuario instanceof Usuario) {
+            return new JsonResponse(['status' => 'Usuario no autenticado'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Crear una nueva instancia de Ubicacion y establecer sus propiedades
+        $ubicacion = new Ubicacion();
+        $ubicacion->setLatitud($data['latitude']);
+        $ubicacion->setLongitud($data['longitude']);
+        $ubicacion->setIdUsuario($usuario);
+
+        // Guardar la nueva ubicación en la base de datos
+        $ubicacionRepository->addUbicacion($ubicacion);
+
+        // Devolver una respuesta JSON indicando el resultado de la operación
+        return new JsonResponse(['status' => 'Ubicación guardada correctamente'], Response::HTTP_CREATED);
+    }*/
+
+    #[Route('/guardar-ubicacion', name: 'guardar_ubicacion', methods: ['POST'])]
+    public function guardarUbicacion(Request $request, UbicacionRepository $ubicacionRepository, UsuarioRepository $usuarioRepository): JsonResponse
+    {
+        // Decodificar los datos enviados en el cuerpo de la solicitud
+        $data = json_decode($request->getContent(), true);
+
+        // Validar que los parámetros latitude y longitude existan
+        if (empty($data['latitude']) || empty($data['longitude'])) {
+            return new JsonResponse(['status' => 'Faltan parámetros'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Obtener el ID del usuario desde el cuerpo de la solicitud
+        $userId = $data['userId'] ?? null;
+
+        if (!$userId) {
+            return new JsonResponse(['status' => 'ID de usuario no proporcionado'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Buscar el usuario con el ID proporcionado
+        $usuario = $usuarioRepository->find($userId);
+
+        // Validar si el usuario existe
+        if (!$usuario) {
+            return new JsonResponse(['status' => 'Usuario no encontrado'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Crear una nueva instancia de Ubicación y establecer sus propiedades
+        $ubicacion = new Ubicacion();
+        $ubicacion->setLatitud($data['latitude']);
+        $ubicacion->setLongitud($data['longitude']);
+        $ubicacion->setIdUsuario($usuario);
+
+        // Guardar la nueva ubicación en la base de datos
+        $ubicacionRepository->addUbicacion($ubicacion);
+
+        // Devolver una respuesta JSON indicando que la ubicación fue guardada correctamente
+        return new JsonResponse(['status' => 'Ubicación guardada correctamente'], Response::HTTP_CREATED);
+    }
 
 
 

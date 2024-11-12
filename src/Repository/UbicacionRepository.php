@@ -16,6 +16,11 @@ class UbicacionRepository extends ServiceEntityRepository
         parent::__construct($registry, Ubicacion::class);
     }
 
+    public function addUbicacion(Ubicacion $ubicacion){
+        $this->getEntityManager()->persist($ubicacion);
+        $this->getEntityManager()->flush();
+    }
+
     //    /**
     //     * @return Ubicacion[] Returns an array of Ubicacion objects
     //     */

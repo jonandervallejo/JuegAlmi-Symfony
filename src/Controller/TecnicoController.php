@@ -30,7 +30,7 @@ class TecnicoController extends AbstractController
         return $this->render('login.html.twig');
     }
 
-    //comprobar datos del login de aplicacion de tecnicos
+    //FUNCIONA
     #[Route('/comprobarLogin', name: 'app_login', methods: ['POST'])]
     public function login(Request $request, UsuarioRepository $usuarioRepository, ProductoRepository $productoRepository, JWTTokenManagerInterface $jwtManager): Response 
     {
@@ -80,10 +80,79 @@ class TecnicoController extends AbstractController
         ]);
     }
 
+    //FUNCIONA
+    #[Route('/getProducto/{id}', name: 'app_get_product', methods: ['GET'])]
+    public function getProduct(ProductoRepository $productoRepository, $id): JsonResponse
+    {
+        $producto = $productoRepository->find($id);
+
+        if (!$producto) {
+            return new JsonResponse(['status' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+
+        return new JsonResponse([
+            'nombre' => $producto->getNombre(),
+            'descripcion' => $producto->getDescripcion(),
+            'precio' => $producto->getPrecio(),
+            'stock' => $producto->getStock(),
+            'imagen' => $producto->getImagen(),
+            'tipo_producto' => $producto->getTipoProducto()
+        ], Response::HTTP_OK);
+    }   
+
+    //FUNCIONA
+    #[Route('/getReparaciones', name: 'app_get_reparaciones', methods: ['GET'])]
+    public function getReparaciones(RepacionRepository $reparacionRepository): Response
+    {
+        return $this->convertToJson($reparacionRepository->findAll());
+    }
+
+    //FUNCIONA
+    #[Route('/getReparacion/{id}', name: 'app_get_reparacion', methods: ['GET'])]
+    public function getReparacion(RepacionRepository $repacionRepository, $id): JsonResponse
+    {
+        // Buscar la reparación por ID
+        $reparacion = $repacionRepository->find($id);
+
+        if (!$reparacion) {
+            return new JsonResponse(['status' => 'Reparación no encontrada'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Devolver la incidencia y la fecha de inicio en una respuesta JSON
+        return new JsonResponse([
+            'incidencia' => $reparacion->getIncidencia(),
+            'fecha_inicio' => $reparacion->getFechaInicio()->format('Y-m-d')
+        ], Response::HTTP_OK);
+    }
+    
+    
+   
+    //PROBAR CUANDO SE HAGAN REPARACIONES
+   /* #[Route('/getProductosSolicitadosReparacion', name: 'app_get_productos_solicitados_para_reparacion', methods: ['GET'])]
+    public function getProductosSolicitadosReparacion(RepacionRepository $reparacionRepository): JsonResponse
+    {
+        $reparaciones = $reparacionRepository->findAll();
+        $productosSolicitados = [];
+
+        foreach ($reparaciones as $reparacion) {
+            foreach ($reparacion->getProductoSolicitados() as $productoSolicitado) {
+                $producto = $productoSolicitado->getProducto();
+                $productosSolicitados[] = [
+                    'id' => $producto->getId(),
+                    'nombre' => $producto->getNombre(),
+                    'descripcion' => $producto->getDescripcion(),
+                    'precio' => $producto->getPrecio(),
+                    'stock' => $producto->getStock(),
+                    'imagen' => $producto->getImagen()
+                ];
+            }
+        }
+
+        return new JsonResponse($productosSolicitados, Response::HTTP_OK);
+    }*/
 
 
-
-   /* #[Route('/gestionarReparacion/{id}', name: 'app_gestionar_reparacion', methods: ['POST'])]
+    #[Route('/gestionarReparacion/{id}', name: 'app_gestionar_reparacion', methods: ['POST'])]
     public function gestionarReparacion(Request $request, RepacionRepository $reparacionRepository, SolicitudRepository $solitud, EntityManagerInterface $entityManager, $id): JsonResponse
     {
         $fechaFin = $request->request->get('fecha_fin');
@@ -111,60 +180,9 @@ class TecnicoController extends AbstractController
         $entityManager->flush();
 
         return new JsonResponse(['status' => 'Reparacion actualizada'], Response::HTTP_OK);
-    }*/
-
-    //FUNCIONA
-    #[Route('/getProducto/{id}', name: 'app_get_product', methods: ['GET'])]
-    public function getProduct(ProductoRepository $productoRepository, $id): JsonResponse
-    {
-        $producto = $productoRepository->find($id);
-
-        if (!$producto) {
-            return new JsonResponse(['status' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
-        }
-
-        return new JsonResponse([
-            'nombre' => $producto->getNombre(),
-            'descripcion' => $producto->getDescripcion(),
-            'precio' => $producto->getPrecio(),
-            'stock' => $producto->getStock(),
-            'imagen' => $producto->getImagen(),
-            'tipo_producto' => $producto->getTipoProducto()
-        ], Response::HTTP_OK);
     }
+   
 
-    //obtener reparaciones
-    #[Route('/getReparaciones', name: 'app_get_reparaciones', methods: ['GET'])]
-    public function getReparaciones(RepacionRepository $reparacionRepository): Response
-    {
-        return $this->convertToJson($reparacionRepository->findAll());
-    }
-    
-
-    //PROBAR CUANDO SE HAGAN REPARACIONES
-    //metodo para obtener los productos solicitados para reparación
-    #[Route('/getProductosSolicitadosReparacion', name: 'app_get_productos_solicitados_para_reparacion', methods: ['GET'])]
-    public function getProductosSolicitadosReparacion(RepacionRepository $reparacionRepository): JsonResponse
-    {
-        $reparaciones = $reparacionRepository->findAll();
-        $productosSolicitados = [];
-
-        foreach ($reparaciones as $reparacion) {
-            foreach ($reparacion->getProductoSolicitados() as $productoSolicitado) {
-                $producto = $productoSolicitado->getProducto();
-                $productosSolicitados[] = [
-                    'id' => $producto->getId(),
-                    'nombre' => $producto->getNombre(),
-                    'descripcion' => $producto->getDescripcion(),
-                    'precio' => $producto->getPrecio(),
-                    'stock' => $producto->getStock(),
-                    'imagen' => $producto->getImagen()
-                ];
-            }
-        }
-
-        return new JsonResponse($productosSolicitados, Response::HTTP_OK);
-    }
 
     private function convertToJson($data): JsonResponse
     {

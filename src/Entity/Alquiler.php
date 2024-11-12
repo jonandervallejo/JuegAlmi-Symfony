@@ -14,16 +14,16 @@ class Alquiler extends Solicitud
     #[ORM\Column]
     private ?int $id = null;*/
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $fecha_inicio = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $fecha_fin = null;
 
-    public function getId(): ?int
+    /*public function getId(): ?int
     {
         return $this->id;
-    }
+    } */
 
     public function getFechaInicio(): ?\DateTimeInterface
     {

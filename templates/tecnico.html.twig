@@ -25,11 +25,38 @@
                 <div id="sub-tab-1" class="sub-tab-content current">
                     <!-- CONTENIDO DE REPARACION DE CONSOLAS -->
                     <!--******************************************-->
+                    <form id="reparacion-form">
+                        <div class="form-group">
+                            <label for="reparacion-select">Seleccionar Reparación:</label>
+                            <select id="reparacion-select" name="reparacion">
+                                <option value="">Seleccione una reparación</option>                                                      
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="incidencia">Incidencia:</label>
+                            <input type="text" id="incidencia" name="incidencia" />
+                        </div>
+                        <div class="form-group">
+                            <label for="fecha-inicio">Fecha de Inicio:</label>
+                            <input type="date" id="fecha-inicio" name="fecha-inicio" />
+                        </div>
+                        <div class="form-group">
+                            <label for="fecha-fin">Fecha de Fin:</label>
+                            <input type="date" id="fecha-fin" name="fecha-fin" />
+                        </div>
+                        <div class="form-group">
+                            <label for="precio-reparacion">Precio de Reparación:</label>
+                            <input type="number" id="precio-reparacion" name="precio-reparacion" step="0.01" />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar Reparación</button>
+                    </form>
                 </div>
             </div>
             <div id="tab-2" class="tab-content">
                 <h3>Productos</h3>
                 <div class="product-container">
+                <!-- CONTENIDO DE GESTION DE PRODUCTOS -->
+                <!--******************************************-->
                     <form id="product-form">
                         <div class="form-group">
                             <label for="product-select">Seleccionar Producto:</label>
@@ -88,6 +115,8 @@
             <div id="tab-4" class="tab-content">
                 <h3>Productos</h3>
                 <div class="product-container">
+                <!-- CONTENIDO DE GESTION DE PRODUCTOS -->
+                <!--******************************************-->
                     <form id="product-form">
                         <div class="form-group">
                             <label for="product-select">Seleccionar Producto:</label>
@@ -233,6 +262,34 @@
         .btn-primary:hover {
             background-color: #0056b3;
         }
+            .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .btn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
     </style>
 
     <script>
@@ -242,6 +299,9 @@
             const subTabs = document.querySelectorAll('.sub-tab-link');
             const subContents = document.querySelectorAll('.sub-tab-content');
             const productSelect = document.getElementById('product-select');
+            const reparacionSelect = document.getElementById('reparacion-select');
+            const incidenciaInput = document.getElementById('incidencia');
+            const fechaInicioInput = document.getElementById('fecha-inicio');
             const nameInput = document.getElementById('name');
             const descriptionTextarea = document.getElementById('description');
             const priceInput = document.getElementById('price');
@@ -300,6 +360,40 @@
                     stockInput.value = '';
                     imageInput.value = '';
                     tipoProductoInput.value = '';
+                }
+            });
+
+            // Maneja la selección de una reparación en el desplegable
+            fetch('/getReparaciones')
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(reparacion => {
+                        const option = document.createElement('option');
+                        option.value = reparacion.id;
+                        option.textContent = reparacion.incidencia;
+                        reparacionSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+
+            // Maneja la selección de una reparación en el desplegable
+            reparacionSelect.addEventListener('change', function () {
+                const reparacionId = this.value;
+
+                if (reparacionId) {
+                    // Realiza una solicitud para obtener los detalles de la reparación seleccionada
+                    fetch(`/getReparacion/${reparacionId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Rellena los campos del formulario con los datos de la reparación
+                            incidenciaInput.value = data.incidencia;
+                            fechaInicioInput.value = data.fecha_inicio;
+                        })
+                        .catch(error => console.error('Error:', error));
+                } else {
+                    // Limpia los campos del formulario si no se selecciona ninguna reparación
+                    incidenciaInput.value = '';
+                    fechaInicioInput.value = '';
                 }
             });
 
