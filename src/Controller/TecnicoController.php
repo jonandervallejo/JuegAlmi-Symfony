@@ -125,7 +125,7 @@ class TecnicoController extends AbstractController
         ], Response::HTTP_OK);
     }
     
-    
+
    
     //PROBAR CUANDO SE HAGAN REPARACIONES
    /* #[Route('/getProductosSolicitadosReparacion', name: 'app_get_productos_solicitados_para_reparacion', methods: ['GET'])]
@@ -151,7 +151,7 @@ class TecnicoController extends AbstractController
         return new JsonResponse($productosSolicitados, Response::HTTP_OK);
     }*/
 
-
+    //MIRAR EN CASA***************************************************
     #[Route('/gestionarReparacion/{id}', name: 'app_gestionar_reparacion', methods: ['POST'])]
     public function gestionarReparacion(Request $request, RepacionRepository $reparacionRepository, SolicitudRepository $solitud, EntityManagerInterface $entityManager, $id): JsonResponse
     {
