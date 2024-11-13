@@ -6,6 +6,7 @@ use App\Entity\Producto;
 use App\Repository\ProductoRepository;
 use App\Repository\RepacionRepository;
 use App\Repository\UsuarioRepository;
+use App\Repository\SolicitudRepository;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -102,9 +103,89 @@ class TecnicoController extends AbstractController
 
     //FUNCIONA
     #[Route('/getReparaciones', name: 'app_get_reparaciones', methods: ['GET'])]
-    public function getReparaciones(RepacionRepository $reparacionRepository): Response
+    public function getReparaciones(RepacionRepository $reparacionRepository): JsonResponse
     {
-        return $this->convertToJson($reparacionRepository->findAll());
+        
+        $reparaciones = $reparacionRepository->findAll();
+
+        // Formatear las reparaciones en un array para la respuesta JSON
+        $reparacionesArray = [];
+        foreach ($reparaciones as $reparacion) {
+            $productosSolicitados = $reparacion->getProductoSolicitados();
+            $productosArray = [];
+            foreach ($productosSolicitados as $productoSolicitado) {
+                $producto = $productoSolicitado->getIdProducto();
+                if ($producto->getTipoProducto() === 'consolas') {
+                    $productosArray[] = [
+                        'id' => $producto->getId(),
+                        'nombre' => $producto->getNombre(),
+                        'descripcion' => $producto->getDescripcion(),
+                        'precio' => $producto->getPrecio(),
+                        'stock' => $producto->getStock(),
+                        'imagen' => $producto->getImagen(),
+                        'tipo_producto' => $producto->getTipoProducto()
+                    ];
+                }
+            }
+
+            $nombreProducto = !empty($productosArray) ? $productosArray[0]['nombre'] : null;
+
+            if (!empty($productosArray)) {
+                $reparacionesArray[] = [
+                    'id' => $reparacion->getId(),
+                    'nombre_producto' => $nombreProducto,
+                    'incidencia' => $reparacion->getIncidencia(),
+                    'fecha_inicio' => $reparacion->getFechaInicio()->format('Y-m-d'),
+                    'productos' => $productosArray
+                ];
+            }
+        }
+
+        // Devolver las reparaciones en una respuesta JSON
+        return new JsonResponse($reparacionesArray, Response::HTTP_OK);
+    }
+
+    //FUNCIONA
+    #[Route('/getReparacionesSmartphones', name: 'app_get_reparaciones_smartphones', methods: ['GET'])]
+    public function getReparacionesSmartphones(RepacionRepository $reparacionRepository): JsonResponse
+    {
+        $reparaciones = $reparacionRepository->findAll();
+
+        // Formatear las reparaciones en un array para la respuesta JSON
+        $reparacionesArray = [];
+        foreach ($reparaciones as $reparacion) {
+            $productosSolicitados = $reparacion->getProductoSolicitados();
+            $productosArray = [];
+            foreach ($productosSolicitados as $productoSolicitado) {
+                $producto = $productoSolicitado->getIdProducto();
+                if ($producto->getTipoProducto() === 'smartphones') {
+                    $productosArray[] = [
+                        'id' => $producto->getId(),
+                        'nombre' => $producto->getNombre(),
+                        'descripcion' => $producto->getDescripcion(),
+                        'precio' => $producto->getPrecio(),
+                        'stock' => $producto->getStock(),
+                        'imagen' => $producto->getImagen(),
+                        'tipo_producto' => $producto->getTipoProducto()
+                    ];
+                }
+            }
+
+            $nombreProducto = !empty($productosArray) ? $productosArray[0]['nombre'] : null;
+
+            if (!empty($productosArray)) {
+                $reparacionesArray[] = [
+                    'id' => $reparacion->getId(),
+                    'nombre_producto' => $nombreProducto,
+                    'incidencia' => $reparacion->getIncidencia(),
+                    'fecha_inicio' => $reparacion->getFechaInicio()->format('Y-m-d'),
+                    'productos' => $productosArray
+                ];
+            }
+        }
+
+        // Devolver las reparaciones en una respuesta JSON
+        return new JsonResponse($reparacionesArray, Response::HTTP_OK);
     }
 
     //FUNCIONA
@@ -113,73 +194,62 @@ class TecnicoController extends AbstractController
     {
         // Buscar la reparación por ID
         $reparacion = $repacionRepository->find($id);
-
+    
         if (!$reparacion) {
             return new JsonResponse(['status' => 'Reparación no encontrada'], Response::HTTP_NOT_FOUND);
         }
-
+    
+        $productosSolicitados = $reparacion->getProductoSolicitados();
+    
+        // Crear un array con los productos solicitados
+        $productos = [];
+        foreach ($productosSolicitados as $productoSolicitado) {
+            $producto = $productoSolicitado->getIdProducto();
+            $productos[] = [
+                'nombre' => $producto->getNombre(),
+                'tipo_producto' => $producto->getTipoProducto()
+            ];
+        }
         // Devolver la incidencia y la fecha de inicio en una respuesta JSON
         return new JsonResponse([
             'incidencia' => $reparacion->getIncidencia(),
-            'fecha_inicio' => $reparacion->getFechaInicio()->format('Y-m-d')
+            'fecha_inicio' => $reparacion->getFechaInicio()->format('Y-m-d'),
+            'productos_solicitados' => $productos
         ], Response::HTTP_OK);
     }
     
 
-   
-    //PROBAR CUANDO SE HAGAN REPARACIONES
-   /* #[Route('/getProductosSolicitadosReparacion', name: 'app_get_productos_solicitados_para_reparacion', methods: ['GET'])]
-    public function getProductosSolicitadosReparacion(RepacionRepository $reparacionRepository): JsonResponse
-    {
-        $reparaciones = $reparacionRepository->findAll();
-        $productosSolicitados = [];
 
-        foreach ($reparaciones as $reparacion) {
-            foreach ($reparacion->getProductoSolicitados() as $productoSolicitado) {
-                $producto = $productoSolicitado->getProducto();
-                $productosSolicitados[] = [
-                    'id' => $producto->getId(),
-                    'nombre' => $producto->getNombre(),
-                    'descripcion' => $producto->getDescripcion(),
-                    'precio' => $producto->getPrecio(),
-                    'stock' => $producto->getStock(),
-                    'imagen' => $producto->getImagen()
-                ];
-            }
-        }
-
-        return new JsonResponse($productosSolicitados, Response::HTTP_OK);
-    }*/
-
-    //MIRAR EN CASA***************************************************
+    //PROBAR    
     #[Route('/gestionarReparacion/{id}', name: 'app_gestionar_reparacion', methods: ['POST'])]
-    public function gestionarReparacion(Request $request, RepacionRepository $reparacionRepository, SolicitudRepository $solitud, EntityManagerInterface $entityManager, $id): JsonResponse
+    public function gestionarReparacion(Request $request, SolicitudRepository $solicitudRepository, RepacionRepository $reparacionRepository, int $id): JsonResponse
     {
-        $fechaFin = $request->request->get('fecha_fin');
-        $precioSolicitud = $request->request->get('precio_solicitud');
-
-        // Verificar si los datos de la reparacion no estan vacios
-        if (empty($fechaFin) || empty($precioSolicitud)) {
-            return new JsonResponse(['status' => 'Faltan parametros'], Response::HTTP_BAD_REQUEST);
+        // Buscar la reparación y solicitud por ID
+        $reparacion = $reparacionRepository->find($id);
+        $solicitud = $solicitudRepository->find($id);
+    
+        // Verificar que la reparación existe
+        if (!$reparacion) {
+            return new JsonResponse(['status' => 'Reparación no encontrada'], Response::HTTP_NOT_FOUND);
         }
-
-        // Buscar la reparacion por id
-        $reparacion = $reparacionRepository->findOneBy(['id' => $id]);
-        $solicitud = $solitud->findOneBy(['id' => $id]);
-
-        if ($reparacion == null) {
-            return new JsonResponse(['status' => 'Reparacion no encontrada'], Response::HTTP_NOT_FOUND);
+    
+        // Decodificar los datos JSON del cuerpo de la solicitud
+        $data = json_decode($request->getContent(), true);
+        dd($data);
+        // Verificar si los datos fueron decodificados correctamente
+        if (!$data) {
+            return new JsonResponse(['status' => 'Datos no válidos'], Response::HTTP_BAD_REQUEST);
         }
-
-        // Establecer la fecha de finalización proporcionada por el usuario
-        $reparacion->setFechaFin(new \DateTime($fechaFin));
-        $solicitud->setPrecioSolicitud($precioSolicitud);
-
-        $entityManager->persist($reparacion);
-        $entityManager->persist($solicitud);
-        $entityManager->flush();
-
-        return new JsonResponse(['status' => 'Reparacion actualizada'], Response::HTTP_OK);
+    
+        // Establecer la fecha de finalización y el precio de la reparación
+        $reparacion->setFechaFin(new \DateTime($data['fecha_fin']));
+        $reparacionRepository->anadirRepacion($reparacion);
+    
+        $solicitud->setPrecioSolicitud($data['precio_solicitud']);
+        $solicitudRepository->anadirPrecioReparacion($solicitud);
+    
+        // Devolver respuesta de éxito
+        return new JsonResponse(['status' => 'Reparación finalizada'], Response::HTTP_OK);
     }
    
 

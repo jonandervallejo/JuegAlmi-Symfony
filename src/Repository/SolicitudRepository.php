@@ -16,7 +16,11 @@ class SolicitudRepository extends ServiceEntityRepository
         parent::__construct($registry, Solicitud::class);
     }
     
-
+    public function anadirPrecioReparacion(Solicitud $solicitud): void
+    {
+        $this->getEntityManager()->persist($solicitud);
+        $this->getEntityManager()->flush();
+    }
     //    /**
     //     * @return Solicitud[] Returns an array of Solicitud objects
     //     */

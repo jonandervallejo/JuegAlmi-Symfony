@@ -74,6 +74,8 @@ class ClienteController extends AbstractController
                 'id' => $usuario->getId(),
                 'email' => $usuario->getEmail(),
                 'nombre' => $usuario->getNombre(),
+                'apellido1' => $usuario->getApellido1(),
+                'apellido2' => $usuario->getApellido2()
             ]
         ]);
     }
@@ -202,6 +204,9 @@ class ClienteController extends AbstractController
                 return new JsonResponse(['error' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
             }
 
+            // Restar 1 al stock del producto
+            $producto->setStock($producto->getStock() - 1);
+
             // Crear una instancia de ProductoSolicitado y asignar el producto a la compra
             $productoSolicitado = new ProductoSolicitado();
             $productoSolicitado->setIdProducto($producto);
@@ -219,41 +224,7 @@ class ClienteController extends AbstractController
         return new JsonResponse(['status' => 'Compra finalizada con éxito'], Response::HTTP_OK);
     }
 
-
-    /*#[Route('/solicitar-reparacion', name: 'solicitar_reparacion', methods: ['POST'])]
-    public function solicitarReparacion(Request $request, EntityManagerInterface $entityManager, SolicitudRepository $solicitudRepository): JsonResponse
-    {
-        // Obtener y decodificar los datos de la solicitud
-        $rawContent = $request->getContent();
-        $data = json_decode($rawContent, true);
-
-        // Validar que los datos sean correctos
-        if (!isset($data['productoId']) || !isset($data['incidencia'])) {
-            return new JsonResponse(['error' => 'Datos incompletos o inválidos recibidos.'], 400);
-        }
-
-        // Buscar el producto por ID
-        $producto = $entityManager->getRepository(Producto::class)->find($data['productoId']);
-        if (!$producto) {
-            return new JsonResponse(['error' => 'Producto no encontrado'], Response::HTTP_NOT_FOUND);
-        }
-
-        //$solicitudRepository->addProductoSolicitado();
-
-        // Crear una nueva instancia de Repacion
-        $reparacion = new Repacion();
-
-        // Asignar los datos a la reparación
-        $reparacion->setFechaInicio(new \DateTime()); // Fecha de inicio de la reparación
-        $reparacion->setIncidencia($data['incidencia']); // Descripción de la incidencia
-
-        // Persistir la reparación en la base de datos
-        $entityManager->persist($reparacion);
-        $entityManager->flush();
-
-        return new JsonResponse(['status' => 'Reparación solicitada con éxito'], Response::HTTP_OK);
-    }*/
-
+    //Probar
     #[Route('/solicitar-reparacion', name: 'solicitar_reparacion', methods: ['POST'])]
     public function solicitarReparacion(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -278,6 +249,12 @@ class ClienteController extends AbstractController
         // Asignar los datos a la reparación
         $reparacion->setFechaInicio(new \DateTime()); // Fecha de inicio de la reparación
         $reparacion->setIncidencia($data['incidencia']); // Descripción de la incidencia
+
+        // Crear una instancia de ProductoSolicitado y asignar el producto a la reparación
+        $productoSolicitado = new ProductoSolicitado();
+        $productoSolicitado->setIdProducto($producto);
+        $reparacion->addProductoSolicitado($productoSolicitado);
+        $entityManager->persist($productoSolicitado);
 
         // Persistir la reparación en la base de datos
         $entityManager->persist($reparacion);
