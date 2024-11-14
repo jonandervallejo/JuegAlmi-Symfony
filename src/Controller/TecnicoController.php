@@ -43,6 +43,7 @@ class TecnicoController extends AbstractController
                 'error' => 'Faltan parámetros'
             ]);
         }
+        
 
         // Buscar el usuario por email
         $usuario = $usuarioRepository->findOneBy(['email' => $data['email']]);
@@ -71,6 +72,8 @@ class TecnicoController extends AbstractController
 
         // Generar el token JWT
         $token = $jwtManager->create($usuario);
+
+        //echo "<script>console.log('Token: " . $token . "');</script>";
 
         //redirijir a la ventana de tecnicos y pasarle el token JWT y la información del usuario
         return $this->render('tecnico.html.twig', [
@@ -221,7 +224,8 @@ class TecnicoController extends AbstractController
 
 
     //PROBAR    
-    #[Route('/gestionarReparacion/{id}', name: 'app_gestionar_reparacion', methods: ['POST'])]
+    #[Route('/api/gestionarReparacion/{id}', name: 'app_gestionar_reparacion', methods: ['POST'])]
+    #[IsGranted("ROLE_ADMIN")]
     public function gestionarReparacion(Request $request, SolicitudRepository $solicitudRepository, RepacionRepository $reparacionRepository, int $id): JsonResponse
     {
         // Buscar la reparación y solicitud por ID
@@ -235,7 +239,8 @@ class TecnicoController extends AbstractController
     
         // Decodificar los datos JSON del cuerpo de la solicitud
         $data = json_decode($request->getContent(), true);
-        dd($data);
+        //dd($data);
+
         // Verificar si los datos fueron decodificados correctamente
         if (!$data) {
             return new JsonResponse(['status' => 'Datos no válidos'], Response::HTTP_BAD_REQUEST);

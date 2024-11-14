@@ -9,23 +9,21 @@
     <div class="tabs-container">
         <ul class="tabs">
             {% if rol == 'tecnicoC' %}
-                <li class="tab-link current" data-tab="tab-1">Reparaciones</li>
+                <!--<li class="tab-link current" data-tab="tab-1">Reparaciones</li>-->
                 <li class="tab-link" data-tab="tab-2">Gestión de Productos</li>
             {% elseif rol == 'tecnicoM' %}
-                <li class="tab-link current" data-tab="tab-3">Reparaciones</li>
+               <!-- <li class="tab-link current" data-tab="tab-3">Reparaciones</li>-->
                 <li class="tab-link" data-tab="tab-4">Gestión de Productos</li>
             {% endif %}
         </ul>
         {% if rol == 'tecnicoC' %}
-            <!-- CONTENIDO DE REPARACION DE CONSOLAS -->
-            <!--******************************************-->
-            <div id="tab-1" class="tab-content current">
+            <!--<div id="tab-1" class="tab-content current">
                 <h3>Reparaciones</h3>
                 <ul class="sub-tabs">
                     <li class="sub-tab-link current" data-tab="sub-tab-1">Consolas</li>
                 </ul>
                 <div id="sub-tab-1" class="sub-tab-content current">
-                    <form id="reparacion-form">
+                    <form id="reparacion-form" method="post">
                         <div class="form-group">
                             <label for="reparacion-select">Seleccionar Reparación:</label>
                             <select id="reparacion-select" name="reparacion">
@@ -51,7 +49,7 @@
                         <button type="submit" id="guardar-reparacion" class="btn btn-primary">Guardar Reparación</button>
                     </form>
                 </div>
-            </div>
+            </div>-->
             <div id="tab-2" class="tab-content">
                 <h3>Productos</h3>
                 <div class="product-container">
@@ -95,22 +93,20 @@
                                 <option value="smartphones">Smartphones</option>
                             </select>
                         </div>
-                        <button type="button" id="delete-button" class="btn btn-danger">Eliminar Producto</button>
                         <button type="button" id="add-button" class="btn btn-success">Añadir Producto</button>
+                        <button type="button" id="delete-button" class="btn btn-danger">Eliminar Producto</button>
                         <button type="button" id="edit-button" class="btn btn-primary">Editar Producto</button>
                     </form>
                 </div>
             </div>
         {% elseif rol == 'tecnicoM' %}
-            <div id="tab-3" class="tab-content current">
-                <!-- CONTENIDO DE REPARACION DE SMARTPHONES -->
-                <!--******************************************-->
+           <!-- <div id="tab-3" class="tab-content current">
                 <h3>Reparaciones</h3>
                 <ul class="sub-tabs">
                     <li class="sub-tab-link current" data-tab="sub-tab-2">Smartphones</li>
                 </ul>
                 <div id="sub-tab-2" class="sub-tab-content current">
-                    <form id="reparacion-form">
+                    <form id="reparacion-form" method="post">
                         <div class="form-group">
                             <label for="reparacionSmartphone-select">Seleccionar Reparación:</label>
                             <select id="reparacionSmartphone-select" name="reparacion">
@@ -136,7 +132,7 @@
                         <button type="submit" id="guardar-reparacion" class="btn btn-primary">Guardar Reparación</button>
                     </form>
                 </div>
-            </div>
+            </div>-->
             <div id="tab-4" class="tab-content">
                 <h3>Productos</h3>
                 <div class="product-container">
@@ -180,8 +176,8 @@
                                 <option value="smartphones">Smartphones</option>
                             </select>
                         </div>
-                        <button type="button" id="delete-button" class="btn btn-danger">Eliminar Producto</button>
                         <button type="button" id="add-button" class="btn btn-success">Añadir Producto</button>
+                        <button type="button" id="delete-button" class="btn btn-danger">Eliminar Producto</button>
                         <button type="button" id="edit-button" class="btn btn-primary">Editar Producto</button>
                     </form>
                 </div>
@@ -316,7 +312,19 @@
             background-color: #0056b3;
         }
     </style>
-
+    <!-- Script para almacenar el token JWT en localStorage -->
+    <script>
+        // Obtener el token desde Twig
+        const token = "{{ token|e('js') }}"; // Escapa el token para uso seguro en JavaScript
+        
+        // Verificar si el token existe y almacenarlo en localStorage
+        if (token) {
+            localStorage.setItem('jwtToken', token);
+            console.log('Token JWT guardado en localStorage');
+        } else {
+            console.error('Token JWT no encontrado');
+        }
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const tabs = document.querySelectorAll('.tab-link');
@@ -324,12 +332,12 @@
             const subTabs = document.querySelectorAll('.sub-tab-link');
             const subContents = document.querySelectorAll('.sub-tab-content');
             const productSelect = document.getElementById('product-select');
-            const reparacionSelect = document.getElementById('reparacion-select');
-            const reparacionSmartphoneSelect = document.getElementById('reparacionSmartphone-select');
-            const incidenciaInput = document.getElementById('incidencia');
-            const fechaInicioInput = document.getElementById('fecha-inicio');
-            const fechaFinInput = document.getElementById('fecha-fin');
-            const precioReparacionInput = document.getElementById('precio-reparacion');
+            //const reparacionSelect = document.getElementById('reparacion-select');
+            //const reparacionSmartphoneSelect = document.getElementById('reparacionSmartphone-select');
+            //const incidenciaInput = document.getElementById('incidencia');
+            //const fechaInicioInput = document.getElementById('fecha-inicio');
+            //const fechaFinInput = document.getElementById('fecha-fin');
+            //const precioReparacionInput = document.getElementById('precio-reparacion');
             const nameInput = document.getElementById('name');
             const descriptionTextarea = document.getElementById('description');
             const priceInput = document.getElementById('price');
@@ -339,7 +347,8 @@
             const deleteButton = document.getElementById('delete-button');
             const addButton = document.getElementById('add-button');
             const editButton = document.getElementById('edit-button');
-            const guardarReparacionButton = document.getElementById('guardar-reparacion');
+            //const guardarReparacionButton = document.getElementById('guardar-reparacion');
+            const token = localStorage.getItem('jwtToken');
 
             // Maneja el cambio de pestañas
             tabs.forEach(tab => {
@@ -392,8 +401,9 @@
                 }
             });
         
-            //FUNCIONA
-            fetch('/getReparaciones')
+            
+            /*fetch('/getReparaciones')
+
                 .then(response => response.json())
                 .then(data => {
                     data.forEach(reparacion => {
@@ -405,7 +415,9 @@
                 })
                 .catch(error => console.error('Error:', error));
 
-            //FUNCIONA
+
+            
+            
             reparacionSelect.addEventListener('change', function () {
                 const reparacionId = this.value;
                 console.log("aa", this.value);
@@ -465,14 +477,14 @@
             });
 
             //ARREGLAR
-           /* guardarReparacionButton.addEventListener('click', function () {
+            guardarReparacionButton.addEventListener('click', function () {
                 const reparacionId = reparacionSelect.value;
                 const fechaFin = fechaFinInput.value;
                 const precioReparacion = precioReparacionInput.value;
 
                 if (reparacionId && fechaFin && precioReparacion) {
                     // Realiza una solicitud para guardar los detalles de la reparación
-                    fetch(`/gestionarReparacion/${reparacionId}`, {
+                    fetch(`/api/gestionarReparacion/${reparacionId}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -497,20 +509,20 @@
             });*/
     
 
-            // Maneja el clic en el botón de eliminar producto
+            // FUNCIONA NO TOCAR
             deleteButton.addEventListener('click', function () {
                 const productId = productSelect.value;
-
                 if (productId) {
-                    // Realiza una solicitud para eliminar el producto seleccionado
                     fetch(`/api/producto/delete/${productId}`, {
-                        method: 'DELETE'
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
                     })
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'Producto eliminado') {
                             alert('Producto eliminado exitosamente');
-                            // Limpia los campos del formulario
                             productSelect.value = '';
                             nameInput.value = '';
                             descriptionTextarea.value = '';
@@ -523,12 +535,14 @@
                         }
                     })
                     .catch(error => console.error('Error:', error));
+                    
                 } else {
                     alert('Seleccione un producto para eliminar');
                 }
             });
 
-            // Maneja el clic en el botón de añadir producto
+
+            // FUNCIONA NO TOCAR
             addButton.addEventListener('click', function () {
                 const name = nameInput.value;
                 const description = descriptionTextarea.value;
@@ -536,12 +550,11 @@
                 const stock = stockInput.value;
                 const image = imageInput.value;
                 const tipoProducto = tipoProductoInput.value;
-
                 if (name && description && price && stock && image && tipoProducto) {
-                    // Realiza una solicitud para añadir un nuevo producto
                     fetch('/api/anadirProducto', {
                         method: 'POST',
                         headers: {
+                            'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
@@ -575,7 +588,7 @@
                 }
             });
 
-            // Maneja el clic en el botón de editar producto
+            // FUNCIONA NO TOCAR
             editButton.addEventListener('click', function () {
                 const productId = productSelect.value;
                 const name = nameInput.value;
@@ -584,12 +597,11 @@
                 const stock = stockInput.value;
                 const image = imageInput.value;
                 const tipoProducto = tipoProductoInput.value;
-
                 if (productId && name && description && price && stock && image && tipoProducto) {
-                    // Realiza una solicitud para editar el producto seleccionado
                     fetch(`/api/producto/editar/${productId}`, {
                         method: 'PUT',
                         headers: {
+                            'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
@@ -616,4 +628,5 @@
             });
         });
     </script>
+    
 {% endblock %}

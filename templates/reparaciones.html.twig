@@ -1,0 +1,115 @@
+{% extends 'tecnico.html.twig' %}
+
+{% block body %}
+    {{ parent() }}
+    <div id="tab-1" class="tab-content current">
+        <h3>Reparaciones</h3>
+        <ul class="sub-tabs">
+            <li class="sub-tab-link current" data-tab="sub-tab-1">Consolas</li>
+        </ul>
+        <div id="sub-tab-1" class="sub-tab-content current">
+            <form id="reparacion-form" method="post">
+                <div class="form-group">
+                    <label for="reparacion-select">Seleccionar Reparación:</label>
+                    <select id="reparacion-select" name="reparacion">
+                        <option value="">Seleccione una reparación</option>                                                      
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="incidencia">Incidencia:</label>
+                    <input type="text" id="incidencia" name="incidencia" />
+                </div>
+                <div class="form-group">
+                    <label for="fecha-inicio">Fecha de Inicio:</label>
+                    <input type="date" id="fecha-inicio" name="fecha-inicio" />
+                </div>
+                <div class="form-group">
+                    <label for="fecha-fin">Fecha de Fin:</label>
+                    <input type="date" id="fecha-fin" name="fecha-fin" />
+                </div>
+                <div class="form-group">
+                    <label for="precio-reparacion">Precio de Reparación:</label>
+                    <input type="number" id="precio-reparacion" name="precio-reparacion" step="0.01" />
+                </div>
+                <button type="submit" id="guardar-reparacion" class="btn btn-primary">Guardar Reparación</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const reparacionSelect = document.getElementById('reparacion-select');
+            const incidenciaInput = document.getElementById('incidencia');
+            const fechaInicioInput = document.getElementById('fecha-inicio');
+            const fechaFinInput = document.getElementById('fecha-fin');
+            const precioReparacionInput = document.getElementById('precio-reparacion');
+            const guardarReparacionButton = document.getElementById('guardar-reparacion');
+
+            // Maneja la selección de una reparación en el desplegable
+            fetch('/getReparaciones')
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(reparacion => {
+                        const option = document.createElement('option');
+                        option.value = reparacion.id;
+                        option.textContent = reparacion.nombre_producto;
+                        reparacionSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+
+            // Maneja la selección de una reparación en el desplegable
+            reparacionSelect.addEventListener('change', function () {
+                const reparacionId = this.value;
+
+                if (reparacionId) {
+                    // Realiza una solicitud para obtener los detalles de la reparación seleccionada
+                    fetch(`/getReparacion/${reparacionId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Rellena los campos del formulario con los datos de la reparación
+                            incidenciaInput.value = data.incidencia;          // Asigna la incidencia
+                            fechaInicioInput.value = data.fecha_inicio;       // Asigna la fecha de inicio
+                        })
+                        .catch(error => console.error('Error:', error));
+                } else {
+                    // Limpia los campos del formulario si no se selecciona ninguna reparación
+                    incidenciaInput.value = '';
+                    fechaInicioInput.value = '';
+                }
+            });
+
+            // Maneja el clic en el botón de guardar reparación
+            guardarReparacionButton.addEventListener('click', function () {
+                const reparacionId = reparacionSelect.value;
+                const fechaFin = fechaFinInput.value;
+                const precioReparacion = precioReparacionInput.value;
+
+                if (reparacionId && fechaFin && precioReparacion) {
+                    // Realiza una solicitud para guardar los detalles de la reparación
+                    fetch(`/api/gestionarReparacion/${reparacionId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            fecha_fin: fechaFin,
+                            precio_solicitud: precioReparacion
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'Reparación finalizada') {
+                            alert('Reparación guardada exitosamente');
+                        } else {
+                            alert('Error al guardar la reparación');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                } else {
+                    alert('Complete todos los campos para guardar la reparación');
+                }
+            });
+        });
+    </script>
+{% endblock %}

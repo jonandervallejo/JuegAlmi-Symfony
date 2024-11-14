@@ -63,7 +63,7 @@ class ProductoController extends AbstractController
 
         // Retornamos la respuesta con los datos del producto creado
         return new JsonResponse([
-            'status' => 'Producto creado exitosamente',
+            'status' => 'Producto añadido',
             'producto' => [
                 'id' => $producto->getId(),
                 'nombre' => $producto->getNombre(),
